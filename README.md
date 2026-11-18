@@ -11,6 +11,19 @@ requests in both directions and restoring the original IDs in responses. The
 approval channel is a bearer-token-protected HTTP API bound to a loopback IP.
 It is separate from MCP stdin/stdout; stdout is reserved for MCP JSON-RPC.
 
+## Compatibility scope
+
+MCP Security Guard supports Claude Desktop when its local MCP server is
+configured to launch this application as a stdio proxy. Tool calls sent through
+the proxy pause for an explicit Allow or Block decision.
+
+Claude Web compatibility is partial. The application can gate MCP tool calls
+when a local stdio MCP client or server is routed through this proxy, but it
+does not monitor or intercept Claude Web's remote MCP connector traffic.
+Claude Web connectors use remote MCP connections, while this application
+currently proxies local stdio servers only. Other MCP messages, including
+initialization and tool discovery, pass through without an approval prompt;
+individual `tools/call` requests are gated.
 ## What this application does
 
 MCP Security Guard sits between an MCP client and an upstream MCP server. It
@@ -186,4 +199,5 @@ no tool calls or audit entries. Normal launch never inserts demo requests.
 
 The approval API listens only on a loopback address and requires the bearer
 token; do not expose it on a non-loopback interface.
+
 
