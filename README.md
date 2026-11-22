@@ -1,11 +1,14 @@
-﻿# MCP Security Guard
+# MCP Security Guard
 
-MCP Security Guard is a Python 3.11+ stdio proxy for MCP clients such as Claude
-Desktop. It starts an upstream stdio MCP server, passes initialization,
-capability negotiation, notifications, discovery, and responses through, and
-holds every `tools/call` until an operator explicitly approves or denies it.
-Only explicitly approved calls are forwarded.
+MCP Security Guard is a standalone Windows desktop application for reviewing and
+approving Model Context Protocol (MCP) tool calls. It includes a native PySide6
+graphical interface and a stdio proxy that an MCP host can launch for a configured
+server. It is not a browser extension, plugin, or add-on.
 
+The proxy starts an upstream stdio MCP server, passes initialization, capability
+negotiation, notifications, discovery, and responses through, and holds every
+`tools/call` until an operator explicitly approves or denies it. Only explicitly
+approved calls are forwarded.
 The proxy preserves JSON-RPC correlation by assigning unique internal IDs to
 requests in both directions and restoring the original IDs in responses. The
 approval channel is a bearer-token-protected HTTP API bound to a loopback IP.
@@ -82,6 +85,24 @@ The approval control API retains the most recent 500 decisions in memory.
 Arguments are available to the authenticated approval client while a request is
 pending and in that bounded recent history. Arguments are intentionally omitted
 from routine logs to reduce accidental sensitive-data exposure.
+
+## Build the standalone Windows desktop package
+
+The package contains a native desktop approval app and a proxy executable for the
+MCP host to launch. Build both on Windows with Python 3.11 or newer:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\scripts\build_windows.ps1
+```
+
+The build creates `dist\desktop\` and `dist\proxy\`. Distribute both folders
+together. Start `MCP-Security-Guard-Desktop.exe` and enter the approval token used
+in the MCP host configuration. Set the host's MCP server command to the bundled
+`mcp-security-guard-proxy.exe`, followed by the proxy options and upstream server
+command shown in the configuration example below. The host launches the proxy
+because it supplies MCP's standard input/output streams. The approval UI is a
+normal Windows desktop app; it has no browser extension, plugin, or add-on.
 
 ## Install and test (Windows PowerShell)
 
@@ -166,16 +187,16 @@ tray's **Exit** command to stop monitoring. Outstanding calls remain paused and
 will fail closed at the proxy timeout if the UI exits.
 
 To configure Claude Desktop, add an MCP server entry like this to its config,
-using the absolute paths for your Python installation and the actual upstream
-server. Use the same token in both Claude Desktop and the GUI:
+using the bundled proxy executable and the actual upstream server command. Use the
+same token in both Claude Desktop and the GUI:
 
 ```json
 {
   "mcpServers": {
     "guarded-filesystem": {
-      "command": "C:\\Users\\lenovo\\Desktop\\mcp-security-guard\\.venv\\Scripts\\python.exe",
+      "command": "C:\\Users\\lenovo\\Desktop\\mcp-security-guard\\dist\\proxy\\mcp-security-guard-proxy.exe",
       "args": [
-        "-m", "mcp_security_guard", "proxy",
+        "proxy",
         "--server-name", "guarded-filesystem",
         "--control-host", "127.0.0.1",
         "--control-port", "8765",
@@ -199,5 +220,3 @@ no tool calls or audit entries. Normal launch never inserts demo requests.
 
 The approval API listens only on a loopback address and requires the bearer
 token; do not expose it on a non-loopback interface.
-
-

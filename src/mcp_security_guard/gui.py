@@ -632,6 +632,16 @@ class MainWindow(QMainWindow):
             card_layout.addWidget(note_label)
             cards.addWidget(card, 1)
         layout.addLayout(cards)
+        self.connection_detail = QLabel(
+            "Start the configured MCP host to launch the Guard proxy. Enter the same "
+            "MCP_GUARD_APPROVAL_TOKEN in this app and the host configuration."
+        )
+        self.connection_detail.setWordWrap(True)
+        self.connection_detail.setStyleSheet(
+            "color: #ffc47d; background: #3a2a19; border: 1px solid #72502a;"
+            "border-radius: 8px; padding: 10px;"
+        )
+        layout.addWidget(self.connection_detail)
         section = QHBoxLayout()
         title = QLabel("Live approval queue")
         title.setObjectName("SectionTitle")
@@ -675,7 +685,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(page)
         layout.setContentsMargins(0, 0, 0, 0)
         intro = QLabel(
-            "Connect this window to the loopback approval API exposed by your MCP proxy."
+            "Connect the desktop approval app to the local MCP proxy."
         )
         intro.setObjectName("PageSubtitle")
         layout.addWidget(intro)
@@ -707,15 +717,15 @@ class MainWindow(QMainWindow):
         info = QFrame()
         info.setObjectName("SettingCard")
         info_layout = QVBoxLayout(info)
-        info_title = QLabel("Connect your MCP client")
+        info_title = QLabel("Connect your MCP host")
         info_title.setObjectName("SectionTitle")
         info_layout.addWidget(info_title)
         info_copy = QLabel(
-            "Configure the client to launch `python -m mcp_security_guard proxy` "
+            "Configure your MCP host to launch the bundled `mcp-security-guard-proxy.exe` "
             "with its real upstream MCP server command. The proxy must use the same "
-            "loopback port, bearer token, and timeout configured here. This desktop "
-            "window observes and decides real requests; it does not fabricate or "
-            "execute tool calls."
+            "loopback port, bearer token, and timeout configured here. The MCP host "
+            "supplies the proxy input and output streams. This desktop app does not "
+            "use a browser extension."
         )
         info_copy.setObjectName("Muted")
         info_copy.setWordWrap(True)
@@ -818,7 +828,31 @@ class MainWindow(QMainWindow):
         )
         self.status_badge.style().unpolish(self.status_badge)
         self.status_badge.style().polish(self.status_badge)
+        self.status_badge.setToolTip(message)
         self.statusBar().showMessage(message)
+        if connected:
+            self.connection_detail.setText("Connected to the MCP approval proxy.")
+            self.connection_detail.setStyleSheet(
+                "color: #63e3ac; background: #103327; border: 1px solid #1d5f47;"
+                "border-radius: 8px; padding: 10px;"
+            )
+        elif message == "Disconnected by user":
+            self.connection_detail.setText("Monitoring stopped. Start monitoring when the proxy is running.")
+            self.connection_detail.setStyleSheet(
+                "color: #a7b3c7; background: #263348; border: 1px solid #35445a;"
+                "border-radius: 8px; padding: 10px;"
+            )
+        else:
+            self.connection_detail.setText(
+                f"{message} Start or restart the MCP host configured to launch the "
+                "Guard proxy. The token only authenticates the connection; it does "
+                "not start the proxy. Check that the app and proxy use the same "
+                "loopback host and port."
+            )
+            self.connection_detail.setStyleSheet(
+                "color: #ffc47d; background: #3a2a19; border: 1px solid #72502a;"
+                "border-radius: 8px; padding: 10px;"
+            )
         if self._worker is not None:
             self.connect_button.setText("Disconnect")
 
